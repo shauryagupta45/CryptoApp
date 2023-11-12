@@ -1,13 +1,9 @@
-import 'dart:convert';
-
 import 'package:crypto_shaurya/Components/CryptoTile.dart';
+import 'package:crypto_shaurya/constants.dart';
 import 'package:flutter/material.dart';
-
-import '../Model/CryptoModel.dart';
-import 'package:http/http.dart' as http;
-
-import '../Model/Model2.dart';
-import '../constants.dart';
+import 'package:flutter_svg/svg.dart';
+import '../Components/SearchBar.dart';
+import '../View Model/ListFetch.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -113,42 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Row(
               children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: searchBarController,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Color(0x0C0A0A0A),
-                      hintText: "Search Cryptocurrency",
-                      hintStyle: TextStyle(color: Color(0x4C0A0A0A)),
-                      prefixIcon: const Padding(
-                        padding: EdgeInsets.only(
-                            left: 8.0), // Adjust the left padding
-                        child: Icon(
-                          Icons.search_outlined,
-                          color: Color(0x4C0A0A0A),
-                        ),
-                      ),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30.0),
-                          borderSide: const BorderSide(color: Colors.grey)),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                        borderSide: const BorderSide(
-                            color: Colors
-                                .grey), // Set the border color when focused
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                        borderSide: const BorderSide(
-                            color: Colors
-                                .grey), // Set the border color when not focused
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          vertical: 1.5, horizontal: 3.0),
-                    ),
-                  ),
-                ),
+                searchBar(searchBarController),
                 const SizedBox(
                   width: 8.0,
                 ),
@@ -210,9 +171,38 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
-              child: Container(height: 150.0),
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Container(
+                width: 317,
+                height: 200,
+                decoration: const BoxDecoration(
+                  color: Color(0x1900CE08),
+                  borderRadius: BorderRadius.all(Radius.circular(40)),
+                ),
+                child: Stack(
+                  children: [
+                    topCryptoBuilder(),
+                    Positioned(
+                      bottom: 50,
+                      left: 0,
+                      right: 0,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          SvgPicture.string(svgGraphTop),
+                          // ClipPath(
+                          //   clipper: MyCustomClipper(),
+                          //   child: Container(
+                          //     height: 70,
+                          //     color: Colors.black,
+                          //   ),
+                          // ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
@@ -248,72 +238,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-}
-
-Future<Model2?> getCrypto() async {
-  try {
-    final response = await http.get(
-      Uri.parse(baseUrl),
-      headers: {'X-CMC_PRO_API_KEY': apiKey},
-    );
-
-    if (response.statusCode == 200) {
-      final Map<dynamic, dynamic> responseData = jsonDecode(response.body);
-
-      // Parse the JSON data into a modelApi instance
-      Model2 apiData = Model2.fromJson(responseData);
-      return apiData;
-    } else {
-      throw Exception(
-          'Failed to load data, status code: ${response.statusCode}');
-    }
-  } catch (e) {
-    print(e.toString());
-  }
-}
-
-Widget buildCryptoFutureBuilder() {
-  return FutureBuilder<Model2?>(
-    future: getCrypto(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
-      }
-      if (snapshot.hasError) {
-        return Text("Error: ${snapshot.error}");
-      }
-      if (!snapshot.hasData) {
-        return const Text("No data available");
-      }
-      Model2? apiData = snapshot.data!;
-      return buildCryptoList(apiData);
-    },
-  );
-}
-
-Widget buildCryptoList(Model2 apiData) {
-  return ListView.builder(
-    itemCount: 20,
-    itemBuilder: (context, index) {
-      if (index == 0) {
-        return const SizedBox.shrink();
-      }
-
-      String pricey =
-          apiData.data![index].quote!.usd!.price!.toInt().toString();
-
-      String percentShow = apiData.data![index].quote!.usd!.percentChange24h!
-          .toDouble()
-          .toStringAsFixed(2);
-
-      return GenericTile(
-        symbol: apiData.data![index].symbol.toString(),
-        coinName: apiData.data![index].name.toString(),
-        price: "\$$pricey",
-        percentChange24: percentShow,
-      );
-    },
-  );
 }
