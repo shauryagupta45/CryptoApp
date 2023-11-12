@@ -2,8 +2,11 @@ import 'package:crypto_shaurya/Components/CryptoTile.dart';
 import 'package:crypto_shaurya/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:provider/provider.dart';
+import '../Components/FilterDialogBox.dart';
 import '../Components/SearchBar.dart';
 import '../View Model/ListFetch.dart';
+import 'package:crypto_shaurya/providerr.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -13,47 +16,19 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String? sortByOption;
   bool hasNotification = true;
   final searchBarController = TextEditingController();
 
-  // List<CryptoModel> CryptoList = [];
-
-  // Future<List<CryptoModel>> getCrypto() async {
-  //   CryptoList.clear();
-  //   try {
-  //     final response = await http.get(
-  //       Uri.parse(baseUrl),
-  //       headers: {'X-CMC_PRO_API_KEY': apiKey},
-  //     );
-  //     var data = jsonDecode(response.body.toString());
-  //     if (response.statusCode == 200) {
-  //       // Check if 'data' key is present in the response
-  //       if (data.containsKey('data')) {
-  //         for (Map i in data['data']) {
-  //           CryptoModel coin = CryptoModel(data: i['data']);
-  //           CryptoList.add(coin);
-  //         }
-  //         print("response successful");
-  //         return CryptoList;
-  //       } else {
-  //         print('Missing data key in the response');
-  //       }
-  //     } else {
-  //       print('response unsuccessful');
-  //       print('Status code: ${response.statusCode}');
-  //       print('Response body: ${response.body}');
-  //     }
-  //   } catch (e) {
-  //     print("Exception: $e");
-  //     print("Tried but not successful");
-  //   }
-  //
-  //   return CryptoList;
-  // }
+  // List of options
+  final List<String> options = [
+    'MarketCap',
+    'Price',
+    'Volume_24h',
+  ];
 
   @override
   Widget build(BuildContext context) {
+    print("build");
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -107,41 +82,66 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Row(
-              children: [
-                searchBar(searchBarController),
-                const SizedBox(
-                  width: 8.0,
+            Row(children: [
+              searchBar(searchBarController),
+              const SizedBox(
+                width: 8.0,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(30.0),
+                  border: Border.all(color: Colors.grey),
                 ),
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(30.0),
-                    border: Border.all(color: Colors.grey),
-                  ),
-                  child: InkWell(
-                    onTap: () {},
-                    child: Container(
-                      height: 46.0,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 8.0, horizontal: 16.0),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.filter_list, color: Color(0x4C0A0A0A)),
-                          SizedBox(width: 10.0),
-                          Text(
-                            "Filter",
-                            style: TextStyle(
-                                color: Color(0x4C0A0A0A),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16.0),
-                          )
-                        ],
+                child: Consumer<OptionProvider>(
+                  builder: (context, value, child) {
+                    print("provider works");
+                    return InkWell(
+                      onTap: () {
+                        // Show the dropdown menu
+                        buildShowDialog(context, value);
+                      },
+                      onDoubleTap: () {
+                        value.setOption('Filter');
+                      },
+                      child: Container(
+                        height: 46.0,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8.0, horizontal: 16.0),
+                        child: Row(
+                          children: [
+                            if (value.selectedOption == 'MarketCap' ||
+                                value.selectedOption == 'Price' ||
+                                value.selectedOption == 'Volume_24h')
+                              const Icon(Icons.arrow_circle_down_rounded,
+                                  color: Colors.green)
+                            else
+                              const Icon(Icons.filter_list,
+                                  color: Color(0x4C0A0A0A)),
+                            const SizedBox(width: 10.0),
+                            if (value.selectedOption == 'Filter')
+                              Text(
+                                value.selectedOption,
+                                style: const TextStyle(
+                                    color: Color(0x4C0A0A0A),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16.0),
+                              ),
+                            if (value.selectedOption != 'Filter')
+                              Text(
+                                value.selectedOption,
+                                style: const TextStyle(
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16.0),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
-              ],
-            ),
+              ), // Filter
+            ]),
             const SizedBox(height: 15.0),
             Padding(
               padding:
@@ -169,41 +169,43 @@ class _HomeScreenState extends State<HomeScreen> {
                   )
                 ],
               ),
-            ),
+            ), //Crypto_NFT
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Container(
-                width: 317,
-                height: 200,
-                decoration: const BoxDecoration(
-                  color: Color(0x1900CE08),
-                  borderRadius: BorderRadius.all(Radius.circular(40)),
-                ),
-                child: Stack(
-                  children: [
-                    topCryptoBuilder(),
-                    Positioned(
-                      bottom: 50,
-                      left: 0,
-                      right: 0,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          SvgPicture.string(svgGraphTop),
-                          // ClipPath(
-                          //   clipper: MyCustomClipper(),
-                          //   child: Container(
-                          //     height: 70,
-                          //     color: Colors.black,
-                          //   ),
-                          // ),
-                        ],
+              child: Consumer<OptionProvider>(builder: (context, value, child) {
+                return Container(
+                  width: 317,
+                  height: 200,
+                  decoration: const BoxDecoration(
+                    color: Color(0x1900CE08),
+                    borderRadius: BorderRadius.all(Radius.circular(40)),
+                  ),
+                  child: Stack(
+                    children: [
+                      topCryptoBuilder(value.selectedOption),
+                      Positioned(
+                        bottom: 50,
+                        left: 0,
+                        right: 0,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            SvgPicture.string(svgGraphTop),
+                            // ClipPath(
+                            //   clipper: MyCustomClipper(),
+                            //   child: Container(
+                            //     height: 70,
+                            //     color: Colors.black,
+                            //   ),
+                            // ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                    ],
+                  ),
+                );
+              }),
+            ), //Top Crypto
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
               child: Row(
@@ -231,8 +233,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   )
                 ],
               ),
-            ),
-            Expanded(child: buildCryptoFutureBuilder()),
+            ), //TopCurrency-View All
+            Consumer<OptionProvider>(builder: (context, value, child) {
+              return Expanded(
+                  child: buildCryptoFutureBuilder(value.selectedOption));
+            }) //CryptoList
           ],
         ),
       ),

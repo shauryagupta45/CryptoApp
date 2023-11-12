@@ -2,9 +2,11 @@ import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:crypto_shaurya/Components/CryptoTile.dart';
+import 'package:crypto_shaurya/providerr.dart';
 import 'package:flutter/material.dart';
 
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 import '../Model/Model2.dart';
 import '../constants.dart';
@@ -31,7 +33,7 @@ Future<Model2?> getCrypto() async {
   }
 }
 
-Widget buildCryptoFutureBuilder() {
+Widget buildCryptoFutureBuilder(String? sortBy) {
   return FutureBuilder<Model2?>(
     future: getCrypto(),
     builder: (context, snapshot) {
@@ -47,12 +49,30 @@ Widget buildCryptoFutureBuilder() {
         return const Text("No data available");
       }
       Model2? apiData = snapshot.data!;
-      return buildCryptoList(apiData);
+      return buildCryptoList(apiData, sortBy);
     },
   );
 }
 
-Widget buildCryptoList(Model2 apiData) {
+Widget buildCryptoList(Model2 apiData, String? sortBy) {
+  // Sort the list based on market_cap in decreasing order
+
+  print("cryptoList provider called");
+
+  if (sortBy == 'MarketCap' || sortBy == 'Filter')
+    apiData.data!.sort(
+      (a, b) => b.quote!.usd!.marketCap!.compareTo(a.quote!.usd!.marketCap!),
+    );
+  else if (sortBy == 'Price') {
+    apiData.data!.sort(
+      (a, b) => b.quote!.usd!.price!.compareTo(a.quote!.usd!.price!),
+    );
+  } else if (sortBy == 'Volume_24h') {
+    apiData.data!.sort(
+      (a, b) => b.quote!.usd!.volume24h!.compareTo(a.quote!.usd!.volume24h!),
+    );
+  }
+
   return ListView.builder(
     itemCount: 20,
     itemBuilder: (context, index) {
@@ -78,7 +98,33 @@ Widget buildCryptoList(Model2 apiData) {
   );
 }
 
-Widget topCryptoBuilder() {
+// Widget buildCryptoList(Model2 apiData) {
+//   return ListView.builder(
+//     itemCount: 20,
+//     itemBuilder: (context, index) {
+//       if (index == 0) {
+//         return const SizedBox.shrink();
+//       }
+//
+//       String pricey =
+//           apiData.data![index].quote!.usd!.price!.toInt().toString();
+//
+//       String percentShow = apiData.data![index].quote!.usd!.percentChange24h!
+//           .toDouble()
+//           .toStringAsFixed(2);
+//
+//       return GenericTile(
+//         id: apiData.data![index].id.toString(),
+//         symbol: apiData.data![index].symbol.toString(),
+//         coinName: apiData.data![index].name.toString(),
+//         price: "\$$pricey USD",
+//         percentChange24: percentShow,
+//       );
+//     },
+//   );
+// }
+
+Widget topCryptoBuilder(String? sortBy) {
   return FutureBuilder<Model2?>(
     future: getCrypto(),
     builder: (context, snapshot) {
@@ -94,21 +140,36 @@ Widget topCryptoBuilder() {
         return const Text("No data available");
       }
       Model2? apiData = snapshot.data!;
-      return topCrypto(apiData);
+      return topCrypto(apiData, sortBy);
     },
   );
 }
 
-Widget topCrypto(Model2 apiData) {
+Widget topCrypto(Model2 apiData, String? sortBy) {
+  print("top provider called");
+  if (sortBy == 'MarketCap' || sortBy == 'Filter') {
+    apiData.data!.sort(
+      (a, b) => b.quote!.usd!.marketCap!.compareTo(a.quote!.usd!.marketCap!),
+    );
+  } else if (sortBy == 'Price') {
+    apiData.data!.sort(
+      (a, b) => b.quote!.usd!.price!.compareTo(a.quote!.usd!.price!),
+    );
+  } else if (sortBy == 'Volume_24h') {
+    apiData.data!.sort(
+      (a, b) => b.quote!.usd!.volume24h!.compareTo(a.quote!.usd!.volume24h!),
+    );
+  }
+
   return ListView.builder(
     itemCount: 1,
     itemBuilder: (context, index) {
       if (index == 0) {
         // Display the first item differently
         return Container(
-          padding: const EdgeInsets.symmetric(vertical: 36.0, horizontal: 20.0),
+          padding: const EdgeInsets.symmetric(vertical: 36.0, horizontal: 16.0),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(
@@ -123,6 +184,7 @@ Widget topCrypto(Model2 apiData) {
                   errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
               ),
+              //
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -142,6 +204,7 @@ Widget topCrypto(Model2 apiData) {
                   ),
                 ],
               ),
+              const SizedBox(height: 24.0),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
